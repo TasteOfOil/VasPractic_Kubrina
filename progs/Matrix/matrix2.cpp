@@ -30,7 +30,16 @@ int main(){
 		matrix2[i] = new double[size_2[1]];
 	}
 
-	
+	for(int i = 0;i<size_1[0];i++){
+		for(int j = 0;j<size_1[1];i++){
+			matrix1[i][j] = 0;
+		}
+	}	
+	for(int i = 0;i<size_2[0];i++){
+		for(int j = 0;j<size_2[1];j++){
+			matrix2[i][j] = 0;
+		}
+	}
 
 	int sym = -1;
 	while(sym!=0){
