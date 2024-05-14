@@ -18,20 +18,27 @@ int main(int argc, char *argv[]){
 	for(int i = 0;i<size;i++){
 	cout << buf[0];
 	}
-	cout<<endl;
+	cout<<endl<<"--------------------"<<endl;
 	
 	DIR *dir;
 	struct dirent *entry;
 	dir = opendir(buf[0]);
+	cout <<dir<<endl;
 	if(!dir){
 		perror("diropen");
 		exit(1);
 	}	
-
+	//вынести в рекурсию
 	while((entry = readdir(dir))!=NULL){
-		cout <<entry->d_ino<<" "<<entry->d_name<<" "<<entry->d_type<<endl; 
+		if(entry->d_type == DT_DIR){
+		//Входим в подкаталог
+		}
+		
+		cout <<entry->d_name<<" "<<entry->d_type<<endl;
+			
 	}
 	closedir(dir);
 	
 	return 0;	
 }
+
