@@ -16,8 +16,6 @@ int main(int argc, char *argv[]){
 
 	string path;
 	path = argv[1];
-	cout <<path[0];
-	cout<<endl<<"--------------------"<<endl;
 	
 	DIR *dir;
 	struct dirent *entry;
