@@ -3,10 +3,13 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 using namespace std;
 
-void readDir(DIR *dir, struct dirent *entry, string path);
+void readDir(int fd, int count);
 
 int main(int argc, char *argv[]){
 	
@@ -17,35 +20,63 @@ int main(int argc, char *argv[]){
 	string path;
 	path = argv[1];
 	
-	DIR *dir;
-	struct dirent *entry;
-	dir = opendir(path.data());
-	//cout <<dir<<endl;
-	readDir(dir,entry, path);
-	closedir(dir);
-	
+	int fd ;
+	if((fd = open(path.data(),O_RDONLY)) == -1){
+		perror("Error open file");
+		exit(1);
+	}
+      	struct stat buf;
+	int res ;
+	if((res = fstat(fd, &buf))==-1){
+		perror("Error");
+		exit(1);
+	}
+	if(S_ISDIR(buf.st_mode)){
+		try{
+			readDir(fd,0);	
+		}
+		catch(const char* error_mes){
+			cout <<error_mes<<endl;
+			exit(1);
+		}
+	}
+	close(fd);
 	return 0;	
 }
 
 
-void readDir(DIR *dir, struct dirent *entry, string path){
-	if(!dir){
-		perror("diropen");
+
+void readDir(int fd, int count){
+	++count;
+	if(count > 20){
+		//cout <<"END"<<endl;
+		throw "Error::looping";
+	}	
+      	DIR * d_fd;
+	if((d_fd = fdopendir(fd)) == NULL){
+		perror("Error open dir");
 		exit(1);
 	}
-		
-	
-	string tempStr;
-	while((entry = readdir(dir))!=NULL){
-		if(entry->d_type == DT_DIR && entry->d_name[0] != '.'){
-			cout <<"Catalog: "<<entry->d_name<<endl;
-			tempStr = path + "/" + entry->d_name;
-			//tempDir = opendir(tempStr.data());
-			readDir(opendir(tempStr.data()),entry,tempStr);	
+	struct dirent *entry;
+	while ((entry = readdir(d_fd)) != NULL){
+		if(entry->d_name[0]=='.'){
+			continue;
+		}	
+		switch(entry->d_type){
+			case DT_DIR:
+				//cout <<"DIR: "<<count <<" "<<entry->d_name<<endl;
+				cout <<entry->d_name<<endl;
+				readDir(openat(fd,entry->d_name,O_RDONLY), count);
+				break;
+			case DT_LNK:
+				cout <<"link"<<endl;
+				//readDir(openat(fd,entry->d_name, O_RDONLY), count);
+				break;
+			case DT_REG:
+				//cout <<"file: "<<count<<" "<<entry->d_name<<endl;
+				cout <<entry->d_name<<endl;
+				break;
 		}
-		else if(entry->d_type == DT_REG){
-			cout <<entry->d_name<<" "<<endl;
-		}
-	}
-	//closedir(tempDir);
+	}	
+	closedir(d_fd);	
 }
