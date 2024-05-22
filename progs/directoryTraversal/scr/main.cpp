@@ -15,6 +15,7 @@ using namespace std;
 void readDir(int fd, int count, bool flag);
 
 int main(int argc, char *argv[]){
+	
 	if (argc==1){
 		return 0;
 	}
@@ -39,29 +40,44 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 	unsigned int start_time =  clock();
-	if(S_ISDIR(buf.st_mode)){
+	//pid_t pid = fork();
+	if(S_ISDIR(buf.st_mode) ){//&&pid==0){
 		try{
                   	readDir(fd,0, flag);
+			//return 0;
+			//exit(0);
                 }
                 catch(const char* error_mes){
                         cout <<error_mes<<endl;
                         exit(1);
 		}
-		unsigned int end_time = clock();
-    		unsigned int search_time = end_time - start_time;
-		cout <<"Время работы программы: "<<search_time<<endl;
+		
 	}
+	/*else if(S_ISDIR(buf.st_mode)&&pid!=0){
+                int status;
+                waitpid(pid,&status,0);
+		//wait(NULL);
+                unsigned int end_time = clock();
+                unsigned int search_time = end_time - start_time;
+                cout <<"Время работы программы: "<<search_time<<endl;
+        }*/
 	else {
 		cout <<"This is not a catalog!"<<endl;
 	}
-	
-	close(fd);
+		int status;
+                //waitpid(pid,&status,0);
+		unsigned int end_time = clock();
+                unsigned int search_time = end_time - start_time;
+                cout <<"Время работы программы: "<<search_time<<endl;
+        close(fd);
 	return 0;	
 }
 
 
-
 void readDir(int fd, int count, bool flag){
+	int child_count = 0;
+	static int loopCnt = 0;
+	//cout <<"AAAAAAAAAAAAA"<<loopCnt<<endl;
 	pid_t pid;
 	int status;
 
@@ -85,15 +101,20 @@ void readDir(int fd, int count, bool flag){
 		}	
 		switch(entry->d_type){
 			case DT_DIR:
+				++loopCnt;
 				if(flag && count>1){
-					pid = fork();
+					//if(loopCnt%2==0){
+						 ++child_count;
+						pid = fork();
+					//}
+					//else pid = -1;
 				}
 				else{
 					pid = -1;
 				}
 				if(pid == 0||pid==-1){//уходим на рекурсию в ребенке
 					readDir(openat(fd,entry->d_name,O_RDONLY), count, flag);
-					if(pid == 0)_exit(status);
+					if(pid == 0)_exit(status);//return 
 				}
 				break;
 			case DT_LNK:
@@ -105,15 +126,21 @@ void readDir(int fd, int count, bool flag){
 					cout <<count<<" "<<entry->d_name<<endl;
 				}
 				else if(S_ISLNK(buf.st_mode)||S_ISDIR(buf.st_mode)){
-					if(flag&& count >1){
-						pid = fork();
+					++loopCnt;
+					if(flag&& count>1){
+						//if(loopCnt % 2 ==0){
+
+							++child_count;
+							pid = fork();
+						//}
+						//else pid = -1;
 					}
 					else{
 						pid = -1;	
 					}
 					if(pid == 0 || pid == -1){
 						readDir(res,count, flag);
-						if(pid==0)_exit(status);
+						if(pid==0)_exit(status); //return
 					}
 				}
 				break;
@@ -123,9 +150,10 @@ void readDir(int fd, int count, bool flag){
 		}
 	}
 	if(pid!=0 && flag && pid!=-1){
-		//cout <<"PID "<<pid <<"end"<<endl;
-		waitpid(pid, &status, 0);
-		
+		for(int i = 0;i<child_count;i++){
+		//	waitpid(pid, &status, 0);
+			wait(NULL);
+		}
 		
 	}	
 	closedir(d_fd);
