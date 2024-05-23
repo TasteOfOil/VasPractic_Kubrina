@@ -16,10 +16,13 @@ int main(int argc, char *argv[]){
 	if(argc==1){
 		return 0;
 	}
-	string path;
-	if(argc == 2){
-		path = argv[1];
+	string path = "";
+	if(argc > 1){
+		for(int i = 1;i<argc;i++){
+			path += argv[i]; //на случай если путь введен через пробел
+		}
 	}
+	//path = argv[1];
 	cout <<path<<endl;
 	int fd;
 	if((fd = open(path.data(),O_RDONLY))==-1){
@@ -29,6 +32,7 @@ int main(int argc, char *argv[]){
 	struct stat buf;
 	int res;
 	if((res = fstat(fd, &buf))==-1){
+		cout <<"Please pass the full directory path as a parameter (no spaces)"<<endl;
 		perror("Status error");
 		exit(1);
 	}
@@ -40,7 +44,7 @@ int main(int argc, char *argv[]){
                 cout <<"Время работы программы: "<<search_time<<endl;
 	}
 	else{
-		cout <<"This is not a catalog!"<<endl;
+		cout <<"Please pass the full directory path as a parameter (no spaces)"<<endl;
 	}
 
 
@@ -77,16 +81,21 @@ void readDir(int fd, DIR *d_fd, struct dirent *entry){
 				temp_fd = openat(fd,entry->d_name,O_RDONLY);
 				if((temp_dfd = fdopendir(temp_fd))==NULL){
 					perror("Error open dir");
-					return;
+					break;
+					//return;
 				}	
 				temp_entry = readdir(temp_dfd);
 				readDir(temp_fd, temp_dfd, temp_entry);
 				break;
 			case DT_LNK:
-				cout <<entry->d_name<<endl;
+				if(entry->d_name[0]!='.'){//не выводим скрытые файлы?
+					cout <<entry->d_name<<endl;
+				}
 				break;
 			case DT_REG:
-				cout <<entry->d_name<<endl;
+				if(entry->d_name[0]!='.'){//не выводим скрытые файлы?
+					cout <<entry->d_name<<endl;
+				}
 				break;
 		}        
         
