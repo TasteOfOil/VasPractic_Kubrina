@@ -59,13 +59,7 @@ int main(int argc, char *argv[]){
 
 
 void readDir(int fd){
-	struct stat buf;
-	int res;
 	DIR * d_fd;
-	if((res = fstat(fd, &buf))==-1){
-                perror("Error");
-                exit(1);
-        }
 	if((d_fd = fdopendir(fd))==NULL){
 		perror("Error open dir");
 		return;
