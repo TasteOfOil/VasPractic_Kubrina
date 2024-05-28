@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string>
+//#include <time.h>
 #include <cstring>
 using namespace std;
 
@@ -14,7 +15,8 @@ void readDir(int fd);
 //void readDir(int fd, DIR *d_fd, struct dirent *entry);
 int main(int argc, char *argv[]){
 	string path;
-
+	clock_t start = clock();
+	static double sec = 0;
 	if(argc<=1){
 		cout <<"Enter path to catalog: ";
 		cin.clear();
@@ -41,33 +43,26 @@ int main(int argc, char *argv[]){
 		perror("Status error");
 		exit(1);
 	}
-		unsigned int start_time;
-		unsigned int end_time;
-                unsigned int search_time;
-		//int status;
 	if(S_ISDIR(buf.st_mode)){
-		start_time = clock();
-		//pid_t pid = fork();
-		//if(pid==0){
+		pid_t pid = fork();
+		if(pid==0){
 			readDir(fd);
-		//}
-		//else{
-			//waitpid(pid, &status, 1);
-			end_time = clock();
-               	        search_time = end_time - start_time;
-                       	cout <<"Время работы программы: "<<search_time<<endl;
-		//}
+		}
 	}
 	else{
 		cout <<"Please pass the full directory path as a parameter (no spaces)"<<endl;
 	}
+	clock_t end = clock();
+	sec += (double)(end + start) / CLOCKS_PER_SEC;
+	cout <<"Время работы программы: "<<sec<<endl;
+
 	close(fd);
 	return 0;
 
 }
 
 
-/*void readDir(int fd){
+void readDir(int fd){
 	DIR * d_fd;
 	if((d_fd = fdopendir(fd))==NULL){
 		perror("Error open dir");
@@ -111,48 +106,5 @@ int main(int argc, char *argv[]){
 			wait(NULL);
 		}
 	}
-}*/
-
-
-void readDir(int fd){
-        DIR * d_fd;
-        if((d_fd = fdopendir(fd))==NULL){
-                perror("Error open dir");
-                return;
-        }
-        struct dirent *entry;
-        int temp_fd;
-        DIR* temp_dfd;
-	pid_t pid = -1;
-	int cnt_ch = 0;
-        while((entry=readdir(d_fd))!=NULL){
-                if(strcmp(entry->d_name, ".")!=0 && strcmp(entry->d_name,"..")!=0){
-                        switch(entry->d_type){
-                                case DT_DIR:
-                                        temp_fd = openat(fd,entry->d_name,O_RDONLY);
-                                        if((temp_dfd = fdopendir(temp_fd))==NULL){
-                                                perror("Error open dir");
-                                                break;
-                                        }
-					pid = fork();
-                                        if(pid==0) {cnt_ch++;readDir(temp_fd);}
-                                        break;
-                                case DT_LNK:
-                                        cout <<entry->d_name<<endl;
-                                        break;
-                                case DT_REG:
-                                        cout <<entry->d_name<<endl;
-
-                                        break;
-                        }
-                }
-
-        }
-	if(pid>0){
-		for(int i = 0;i<cnt_ch;i++){
-			wait(NULL);
-		}
-	}
-
 }
 
