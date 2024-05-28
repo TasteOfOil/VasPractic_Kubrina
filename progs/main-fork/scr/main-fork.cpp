@@ -16,7 +16,7 @@ void readDir(int fd);
 int main(int argc, char *argv[]){
 	string path;
 	clock_t start = clock();
-	static double sec = 0;
+	 double sec = 0;
 	if(argc<=1){
 		cout <<"Enter path to catalog: ";
 		cin.clear();
@@ -84,10 +84,12 @@ void readDir(int fd){
 					}	
 					pid = fork();
 					if(pid == 0){
-						child_count++;
 						readDir(temp_fd);
 						pid = -1;
 						break;
+					}
+					else{
+					child_count++;
 					}
 					break;
 				case DT_LNK:
