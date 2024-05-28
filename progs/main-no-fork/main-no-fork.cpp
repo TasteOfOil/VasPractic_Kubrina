@@ -10,22 +10,27 @@
 using namespace std;
 
 void readDir(int fd);
-void readDir(int fd, DIR *d_fd, struct dirent *entry);
+//void readDir(int fd, DIR *d_fd, struct dirent *entry);
 
 int main(int argc, char *argv[]){
-	if(argc==1){
-		return 0;
+	string path;
+	
+	if(argc<=1){
+		cout <<"Enter path to catalog: ";
+		cin.clear();
+		getline(cin, path);
 	}
-	string path = "";
-	if(argc > 1){
+	else if(argc > 1){
+		path = "";
 		for(int i = 1;i<argc;i++){
 			path += argv[i]; //на случай если путь введен через пробел
 		}
 	}
 	//path = argv[1];
-	cout <<path<<endl;
+	cout <<path.data()<<endl;
 	int fd;
 	if((fd = open(path.data(),O_RDONLY))==-1){
+		cout <<"Please pass the full directory path as a parameter (no spaces)"<<endl;
 		perror("Open file");
 		exit(1);
 	}
@@ -66,42 +71,29 @@ void readDir(int fd){
 		return;
 	}
 	struct dirent *entry;
-	if((entry = readdir(d_fd))!=NULL){
-		readDir(fd, d_fd, entry);
-	}
-}
-
-void readDir(int fd, DIR *d_fd, struct dirent *entry){
 	int temp_fd;
 	DIR* temp_dfd;
-	struct dirent *temp_entry;
-	if(strcmp(entry->d_name, ".")!=0 && strcmp(entry->d_name,"..")!=0){
-        	switch(entry->d_type){
-			case DT_DIR:
-				temp_fd = openat(fd,entry->d_name,O_RDONLY);
-				if((temp_dfd = fdopendir(temp_fd))==NULL){
-					perror("Error open dir");
+        while((entry=readdir(d_fd))!=NULL){
+		if(strcmp(entry->d_name, ".")!=0 && strcmp(entry->d_name,"..")!=0){
+			switch(entry->d_type){
+				case DT_DIR:
+					temp_fd = openat(fd,entry->d_name,O_RDONLY);
+					if((temp_dfd = fdopendir(temp_fd))==NULL){
+						perror("Error open dir");
+						break;
+					}	
+					readDir(temp_fd);
 					break;
-					//return;
-				}	
-				temp_entry = readdir(temp_dfd);
-				readDir(temp_fd, temp_dfd, temp_entry);
-				break;
-			case DT_LNK:
-				if(entry->d_name[0]!='.'){//не выводим скрытые файлы?
+				case DT_LNK:
 					cout <<entry->d_name<<endl;
-				}
-				break;
-			case DT_REG:
-				if(entry->d_name[0]!='.'){//не выводим скрытые файлы?
+					break;
+				case DT_REG:
 					cout <<entry->d_name<<endl;
-				}
-				break;
-		}        
+	
+					break;
+			}
+		}	
         
-	}
-	if((entry=readdir(d_fd))!=NULL){
-		readDir(fd,d_fd,entry);
 	}
 
 }
